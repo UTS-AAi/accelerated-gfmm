@@ -256,7 +256,7 @@ def modifiedIsOverlap(V, W, ind, classId):
             return False
         else:
             class_indcomp = classId[indcomp]
-            newInd = indcomp[(class_indcomp != classId[ind]) | (classId[ind] == UNLABELED_CLASS)] # get index of hyperbox representing different classes
+            newInd = indcomp[(class_indcomp != classId[ind]) | (class_indcomp == UNLABELED_CLASS)] # get index of hyperbox representing different classes
             
             if len(newInd) > 0:
                 onesTemp = np.ones((len(newInd), 1))

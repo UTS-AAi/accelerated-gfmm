@@ -15,148 +15,6 @@ from functionhelper.bunchdatatype import Bunch
 from functionhelper.torch_membership_calc import torch_memberG, gpu_memberG
 from functionhelper import device, GPU_Computing_Threshold, is_Have_GPU, UNLABELED_CLASS
 
-#def predict(V, W, classId, XlT, XuT, patClassIdTest, gama = 1, oper = 'min'):
-#    """
-#    GFMM classifier (test routine)
-#
-#      result = predict(V,W,classId,XlT,XuT,patClassIdTest,gama,oper)
-#
-#    INPUT
-#      V                 Tested model hyperbox lower bounds
-#      W                 Tested model hyperbox upper bounds
-#      classId	          Input data (hyperbox) class labels (crisp)
-#      XlT               Test data lower bounds (rows = objects, columns = features)
-#      XuT               Test data upper bounds (rows = objects, columns = features)
-#      patClassIdTest    Test data class labels (crisp)
-#      gama              Membership function slope (default: 1)
-#      oper              Membership calculation operation: 'min' or 'prod' (default: 'min')
-#
-#   OUTPUT
-#      result           A object with Bunch datatype containing all results as follows:
-#                          + summis           Number of misclassified objects
-#                          + misclass         Binary error map
-#                          + sumamb           Number of objects with maximum membership in more than one class
-#                          + out              Soft class memberships
-#                          + mem              Hyperbox memberships
-#
-#    """
-#
-#    #initialization
-#    yX = XlT.shape[0]
-#    misclass = np.zeros(yX)
-#    classes = np.unique(classId)
-#    noClasses = classes.size
-#    ambiguity = np.zeros((yX, 1))
-#    mem = np.zeros((yX, V.shape[0]))
-#    out = np.zeros((yX, noClasses))
-#
-#    # classifications
-#    for i in range(yX):
-#        mem[i, :] = memberG(XlT[i, :], XuT[i, :], V, W, gama, oper) # calculate memberships for all hyperboxes
-#        bmax = mem[i,:].max()	                                          # get max membership value
-#        maxVind = np.nonzero(mem[i,:] == bmax)[0]                         # get indexes of all hyperboxes with max membership
-#
-#        for j in range(noClasses):
-#            out[i, j] = mem[i, classId == classes[j]].max()            # get max memberships for each class
-#
-#        ambiguity[i, :] = np.sum(out[i, :] == bmax) 						  # number of different classes with max membership
-#
-#        if bmax == 0:
-#            print('zero maximum membership value')                     # this is probably bad...
-#            misclass[i] = True
-#        else:
-##        misclass[i] = ~(np.any(classId[maxVind] == patClassIdTest[i]) | (patClassIdTest[i] == UNLABELED_CLASS))
-#            if len(np.unique(classId[maxVind])) > 1:
-#                misclass[i] = True
-#            else:
-#                misclass[i] = ~(np.any(classId[maxVind] == patClassIdTest[i]) | (patClassIdTest[i] == UNLABELED_CLASS))
-#                
-#    # results
-#    sumamb = np.sum(ambiguity[:, 0] > 1)
-#    summis = np.sum(misclass).astype(np.int64)
-#
-#    result = Bunch(summis = summis, misclass = misclass, sumamb = sumamb, out = out, mem = mem)
-#    return result
-
-
-#def torch_predict(V, W, classId, XlT, XuT, patClassIdTest, gama = 1, oper = 'min'):
-#    """
-#    GFMM classifier (test routine). Implemented by Pytorch
-#
-#      result = predict(V,W,classId,XlT,XuT,patClassIdTest,gama,oper)
-#
-#    INPUT
-#      V                 Tested model hyperbox lower bounds
-#      W                 Tested model hyperbox upper bounds
-#      classId	          Input data (hyperbox) class labels (crisp)
-#      XlT               Test data lower bounds (rows = objects, columns = features)
-#      XuT               Test data upper bounds (rows = objects, columns = features)
-#      patClassIdTest    Test data class labels (crisp)
-#      gama              Membership function slope (default: 1)
-#      oper              Membership calculation operation: 'min' or 'prod' (default: 'min')
-#
-#   OUTPUT
-#      result           A object with Bunch datatype containing all results as follows:
-#                          + summis           Number of misclassified objects
-#                          + misclass         Binary error map
-#                          + sumamb           Number of objects with maximum membership in more than one class
-#                          + out              Soft class memberships
-#                          + mem              Hyperbox memberships
-#
-#    """
-#    #initialization
-#    yX = XlT.size(0)
-#    isUsingGPU = False
-#    if is_Have_GPU and (W.size(0) * W.size(1) >= GPU_Computing_Threshold or XlT.size(1) >= GPU_Computing_Threshold):
-#        V = V.cuda()
-#        W = W.cuda()
-#        classId = classId.cuda()
-#        XlT = XlT.cuda()
-#        XuT = XuT.cuda()
-#        patClassIdTest = patClassIdTest.cuda()
-#        misclass = torch.cuda.FloatTensor(yX).fill_(0)
-#        classes = torch.unique(classId)
-#        noClasses = classes.size(0)
-#        ambiguity = torch.cuda.FloatTensor(yX, 1).fill_(0)
-#        mem = torch.cuda.FloatTensor(yX, V.size(0)).fill_(0)
-#        out = torch.cuda.FloatTensor(yX, noClasses).fill_(0)
-#        isUsingGPU = True
-#        els = torch.arange(yX).cuda()
-#    else:
-#        classes = torch.unique(classId)
-#        misclass = torch.zeros(yX)
-#        noClasses = classes.size(0)
-#        ambiguity = torch.zeros((yX, 1))
-#        mem = torch.zeros((yX, V.size(0)))
-#        out = torch.zeros((yX, noClasses))
-#        els = torch.arange(yX)
-#
-#    # classifications
-#    for i in els:
-#        if isUsingGPU == True:
-#            mem[i, :] = gpu_memberG(XlT[i, :], XuT[i, :], V, W, gama, oper)
-#        else:
-#            mem[i, :] = torch_memberG(XlT[i, :], XuT[i, :], V, W, gama, oper) # calculate memberships for all hyperboxes
-#
-#        bmax = mem[i,:].max()	                                          # get max membership value
-#        maxVind = torch.nonzero(mem[i,:] == bmax)                         # get indexes of all hyperboxes with max membership
-#
-#        for j in torch.arange(noClasses):
-#            out[i, j] = mem[i, classId == classes[j]].max()            # get max memberships for each class
-#
-#        ambiguity[i, :] = torch.sum(out[i, :] == bmax) 						  # number of different classes with max membership
-#
-#        if bmax == 0:
-#            print('zero maximum membership value')                     # this is probably bad...
-#
-#        misclass[i] = ~(torch.any(classId[maxVind] == patClassIdTest[i]) | (patClassIdTest[i] == UNLABELED_CLASS))
-#
-#    # results
-#    sumamb = torch.sum(ambiguity[:, 0] > 1)
-#    summis = torch.sum(misclass)
-#
-#    result = Bunch(summis = summis, misclass = misclass, sumamb = sumamb, out = out, mem = mem)
-#    return result
 
 def predict(V, W, classId, XlT, XuT, patClassIdTest, gama = 1, oper = 'min'):
     """
@@ -183,7 +41,11 @@ def predict(V, W, classId, XlT, XuT, patClassIdTest, gama = 1, oper = 'min'):
                           + mem              Hyperbox memberships
 
     """
-
+	if len(XlT.shape) == 1:
+        XlT = XlT.reshape(1, -1)
+    if len(XuT.shape) == 1:
+        XuT = XuT.reshape(1, -1)
+		
     #initialization
     yX = XlT.shape[0]
     misclass = np.zeros(yX)
@@ -239,6 +101,11 @@ def torch_predict(V, W, classId, XlT, XuT, patClassIdTest, gama = 1, oper = 'min
                           + mem              Hyperbox memberships
 
     """
+	if len(XlT.size()) == 1:
+        XlT = XlT.reshape(1, -1)
+    if len(XuT.size()) == 1:
+        XuT = XuT.reshape(1, -1)
+		
     #initialization
     yX = XlT.size(0)
     isUsingGPU = False

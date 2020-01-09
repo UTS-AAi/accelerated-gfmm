@@ -184,7 +184,7 @@ class Torch_BatchGFMMV1(Torch_BaseGFMMClassifier):
                 newV = torch.cat((self.V[0:curmaxb[0].long(), :], torch.min(self.V[curmaxb[0].long(), :], self.V[curmaxb[1].long(), :]).reshape(1, -1), self.V[curmaxb[0].long() + 1:curmaxb[1].long(), :], self.V[curmaxb[1].long() + 1:, :]), dim=0)
                 newW = torch.cat((self.W[0:curmaxb[0].long(), :], torch.max(self.W[curmaxb[0].long(), :], self.W[curmaxb[1].long(), :]).reshape(1, -1), self.W[curmaxb[0].long() + 1:curmaxb[1].long(), :], self.W[curmaxb[1].long() + 1:, :]), dim=0)
                 newClassId = torch.cat((self.classId[0:curmaxb[1].long()], self.classId[curmaxb[1].long() + 1:]))
-                if (newClassId[curmaxb[0].long()] == 0):
+                if (newClassId[curmaxb[0].long()] == UNLABELED_CLASS):
                     newClassId[curmaxb[0].long()] = newClassId[curmaxb[1].long()]
                 #print('Type newV = ', newV.type())
                 # adjust the hyperbox if no overlap and maximum hyperbox size is not violated
